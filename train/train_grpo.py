@@ -58,6 +58,12 @@ def main(argv=None):
         num_generations=args.num_generations,
         max_prompt_length=args.max_prompt,
         max_completion_length=args.max_completion,
+        # trl defaults (top_p=1.0, top_k=50, rep_penalty=1.0) let a 4B reasoner ramble to
+        # max length → never emits eos → reward always 0. Constrain sampling so it terminates.
+        temperature=0.7,
+        top_p=0.9,
+        top_k=20,
+        repetition_penalty=1.1,
         learning_rate=args.lr,
         max_steps=args.max_steps,
         logging_steps=5,
