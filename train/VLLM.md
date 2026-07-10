@@ -47,6 +47,22 @@ touches it.)*
 
 ## Why it matters for GRPO
 `train/train_grpo.py --vllm` sets `GRPOConfig(use_vllm=True)` → trl generates rollouts with
-vLLM instead of HF `.generate()`. That is the dominant cost: this repo's LoRA run was
-**~39 s/step** with HF generate; vLLM typically cuts rollout time **~5–10×** → far cheaper
-GPU. Set up the stack above, then add `--vllm`.
+vLLM instead of HF `.generate()`. That is the dominant cost (this repo's HF-generate run was
+~30 s/step + slow eval); vLLM cuts rollout time **~5–10×**.
+
+## trl + vLLM-GRPO — the version nuance (researched 2026-07-10, NOT yet verified end-to-end)
+The inference recipe above (vllm 0.6.3) does **not** work with trl-0.17 GRPO:
+* trl 0.17 GRPO needs vllm **≥ 0.7** (`StatelessProcessGroup` in `vllm.distributed.utils`) —
+  vllm 0.6.3 lacks it → import error → even non-vLLM GRPO breaks while vllm is installed.
+* Worse: **trl 0.17 is *server-mode only*** — you must run `trl vllm-serve` as a separate
+  process (weight-sync over a process group), ideally on a 2nd GPU. In-process **colocate**
+  mode (single GPU, just `use_vllm=True`) only arrives in **trl ≥ 0.18**.
+
+Two ways to get fast GRPO:
+1. **Stay on trl 0.17:** `vllm==0.7.2` + `torch==2.5.1` (cu121 wheel runs on a 12.4/12.8
+   driver) — but wire up *server mode* (`trl vllm-serve` + trainer), fiddly on 1 GPU.
+2. **⭐ Recommended — upgrade to trl 0.18–0.19:** `use_vllm=True, vllm_mode="colocate"` on a
+   single GPU + a matching `vllm 0.8.x` + `torch 2.6` (cu124). Simple, one process.
+   (trl **1.x** breaks GRPO — stay in the 0.18–0.19 band.)
+
+Verify the chosen combo on first use (CUDA-align to `nvidia-smi` as above).
