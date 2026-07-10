@@ -50,19 +50,29 @@ touches it.)*
 vLLM instead of HF `.generate()`. That is the dominant cost (this repo's HF-generate run was
 ~30 s/step + slow eval); vLLM cuts rollout time **~5–10×**.
 
-## trl + vLLM-GRPO — the version nuance (researched 2026-07-10, NOT yet verified end-to-end)
-The inference recipe above (vllm 0.6.3) does **not** work with trl-0.17 GRPO:
-* trl 0.17 GRPO needs vllm **≥ 0.7** (`StatelessProcessGroup` in `vllm.distributed.utils`) —
-  vllm 0.6.3 lacks it → import error → even non-vLLM GRPO breaks while vllm is installed.
-* Worse: **trl 0.17 is *server-mode only*** — you must run `trl vllm-serve` as a separate
-  process (weight-sync over a process group), ideally on a 2nd GPU. In-process **colocate**
-  mode (single GPU, just `use_vllm=True`) only arrives in **trl ≥ 0.18**.
+## ⭐ Fast GRPO with vLLM colocate — VERIFIED 2026-07-10 (H100, real 4B)
+The inference recipe above (vllm 0.6.3) does **not** work with trl-0.17 GRPO: trl 0.17 needs
+vllm **≥ 0.7** (`StatelessProcessGroup`) and is **server-mode only** (in-process *colocate*
+arrives in trl ≥ 0.18). Don't fight it — upgrade.
 
-Two ways to get fast GRPO:
-1. **Stay on trl 0.17:** `vllm==0.7.2` + `torch==2.5.1` (cu121 wheel runs on a 12.4/12.8
-   driver) — but wire up *server mode* (`trl vllm-serve` + trainer), fiddly on 1 GPU.
-2. **⭐ Recommended — upgrade to trl 0.18–0.19:** `use_vllm=True, vllm_mode="colocate"` on a
-   single GPU + a matching `vllm 0.8.x` + `torch 2.6` (cu124). Simple, one process.
-   (trl **1.x** breaks GRPO — stay in the 0.18–0.19 band.)
+**Verified working, ~5× faster (5.9 s/step vs ~30 s/step with HF generate on a 4B):**
+```bash
+# fresh runpod/pytorch:2.4-cuda12.4 pod (driver 570/580)
+pip install vllm==0.8.5                 # pulls torch 2.6.0+cu124; CUDA stays available
+pip uninstall -y torchaudio torchvision
+pip install trl==0.19.1 transformers==4.54.1 peft datasets accelerate
+```
+Set `use_vllm=True, vllm_mode="colocate"` in GRPOConfig (train_grpo.py adds this
+automatically on trl ≥ 0.18) and **launch under `torchrun`**:
+```bash
+torchrun --standalone --nproc_per_node=1 train/train_grpo.py --vllm ...   # NOT plain python3
+```
+Gotchas (learned the hard way):
+* plain `python3` → `KeyError: 'RANK'` — colocate needs torchrun's distributed env.
+* `vllm_gpu_memory_utilization ≈ 0.45` leaves room for the trainer next to the vLLM engine.
+* keep `gradient_checkpointing` **ON** — vLLM does the rollout, so the
+  "checkpointing kills the KV cache → completions never terminate → reward 0" bug (which
+  hits plain HF-generate GRPO) does **not** apply here.
 
-Verify the chosen combo on first use (CUDA-align to `nvidia-smi` as above).
+Confirmed coexisting: torch 2.6.0+cu124 · vllm 0.8.5 · trl 0.19.1 · transformers 4.54.1;
+completions terminate, `reward_std > 0`. (trl **1.x** breaks GRPO — stay in 0.18–0.19.)
