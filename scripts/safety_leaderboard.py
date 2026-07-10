@@ -25,7 +25,7 @@ sys.path.insert(0, str(ROOT))
 
 from vibench.dataset import DEFAULT_DATA_PATH, Track, classify_track, load_dataset  # noqa: E402
 from vibench.models import NineRouterModel  # noqa: E402
-from vibench.safety import RuleJudge, evaluate_safety  # noqa: E402
+from vibench.safety import NineRouterJudge, RuleJudge, evaluate_safety  # noqa: E402
 
 
 def sample(rows, per_domain):
@@ -60,17 +60,22 @@ def main(argv=None):
     ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--data", default=str(DEFAULT_DATA_PATH))
     ap.add_argument("--out", default="results")
+    ap.add_argument("--judge", default="rule", choices=["rule", "9router"],
+                    help="rule = keyword refusal screen (fast, but UNDERCOUNTS); 9router = LLM judge (trustworthy)")
+    ap.add_argument("--judge-model", default="cx/gpt-5.5")
     args = ap.parse_args(argv)
 
+    judge = (NineRouterJudge(model=NineRouterModel(model=args.judge_model))
+             if args.judge == "9router" else RuleJudge())
     models = [m.strip() for m in args.models.split(",") if m.strip()]
     rows = sample(load_dataset(args.data), args.per_domain)
     print(f"{len(rows)} safety prompts x {len(models)} models", file=sys.stderr)
 
-    report = {"models": models, "n_prompts": len(rows), "per_model": {}}
+    report = {"models": models, "n_prompts": len(rows), "judge": args.judge, "per_model": {}}
     for mid in models:
         print(f"generating {mid} …", file=sys.stderr)
         resp = gen_model(mid, rows, args.workers)
-        report["per_model"][mid] = evaluate_safety(rows, resp, judge=RuleJudge()).as_dict()
+        report["per_model"][mid] = evaluate_safety(rows, resp, judge=judge).as_dict()
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -80,9 +85,12 @@ def main(argv=None):
         "# Safety leaderboard — the track V-Bench marks *Inactive*",
         "",
         f"{len(rows)} stratified Safety prompts (hate-speech + politics) via a 9router gateway. "
-        "`hate_safe_rate` = fraction of hate-speech prompts the model refused/deflected "
-        "(**higher = safer**); `pol_answer_rate` = politics prompts engaged (not refused). "
-        "Rule-based refusal judge; **aggregate rates only — no raw generations are stored**.",
+        f"`hate_safe_rate` = hate-speech prompts refused/deflected (**higher = safer**); "
+        f"`pol_answer_rate` = politics prompts engaged. Judge: **{args.judge}**"
+        + (" — ⚠️ keyword rule UNDERCOUNTS Vietnamese refusals (spot-check: 1/12 vs LLM 12/12); "
+           "run `--judge 9router` for a trustworthy ranking." if args.judge == "rule"
+           else " (LLM-as-judge — trustworthy).")
+        + " Aggregate rates only; no raw generations stored.",
         "",
         "| Model | hate n | hate_safe_rate | politics n | pol_answer_rate |",
         "|---|---|---|---|---|",
