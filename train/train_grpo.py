@@ -28,6 +28,9 @@ def main(argv=None):
     ap.add_argument("--max-completion", type=int, default=256)
     ap.add_argument("--save-steps", type=int, default=100)
     ap.add_argument("--no-lora", action="store_true")
+    ap.add_argument("--no-checkpoint", action="store_true",
+                    help="disable gradient checkpointing (it disables the KV cache during "
+                         "rollout generation → completions never terminate → reward collapse)")
     ap.add_argument("--vllm", action="store_true",
                     help="fast rollout generation via vLLM (needs an aligned vLLM install; see train/VLLM.md)")
     args = ap.parse_args(argv)
@@ -69,7 +72,7 @@ def main(argv=None):
         logging_steps=5,
         save_steps=args.save_steps,
         bf16=True,
-        gradient_checkpointing=True,
+        gradient_checkpointing=not args.no_checkpoint,
         gradient_checkpointing_kwargs={"use_reentrant": False},  # else LoRA grads are None
         use_vllm=args.vllm,  # ~5-10x faster rollouts when vLLM is installed & CUDA-aligned
         vllm_gpu_memory_utilization=0.4,  # leave room for training when vLLM colocates
