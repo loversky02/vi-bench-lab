@@ -66,6 +66,7 @@ def main(argv=None):
         gradient_checkpointing=True,
         gradient_checkpointing_kwargs={"use_reentrant": False},  # else LoRA grads are None
         use_vllm=args.vllm,  # ~5-10x faster rollouts when vLLM is installed & CUDA-aligned
+        vllm_gpu_memory_utilization=0.4,  # leave room for training when vLLM colocates
         report_to="none",
         log_completions=False,
     )
