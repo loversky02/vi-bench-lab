@@ -35,6 +35,16 @@ def test_trl_reward_func():
     assert trl_reward_func(comps, gold=[8, 8]) == [1.1, 0.1]
 
 
+def test_vi_gsm8k_schema_mapping():
+    from train.build_sft_data import to_records
+
+    o = {"question": "Ông Ba ...?", "chain_of_thought": "Bước 1 ... = 1440", "final_answer": "1440"}
+    sft, grpo = to_records(o)
+    assert str(grpo["gold"]) == "1440"
+    assert grpo["prompt"][0]["role"] == "system" and grpo["prompt"][-1]["role"] == "user"
+    assert sft["messages"][-1]["content"].endswith("#### 1440")  # format target appended
+
+
 def test_convert(tmp_path):
     stats = convert(FIX, tmp_path)
     assert stats == {"sft": 3, "grpo": 3, "skipped": 0}

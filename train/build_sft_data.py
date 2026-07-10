@@ -22,7 +22,7 @@ except ImportError:  # when imported as the `train` package (tests, repo root)
     from train.reward import extract_final_answer
 
 _Q_KEYS = ("question", "prompt", "problem", "instruction")
-_A_KEYS = ("answer", "solution", "response", "output", "rationale")
+_A_KEYS = ("answer", "solution", "response", "output", "rationale", "chain_of_thought")
 _FINAL_KEYS = ("final_answer", "final", "gold", "label")
 
 SYSTEM = "Bạn là trợ lý giải toán. Hãy suy luận từng bước rồi kết thúc bằng dòng '#### <đáp án>'."
@@ -43,14 +43,24 @@ def to_records(o: dict):
     gold = _first(o, _FINAL_KEYS)
     if gold is None and a is not None:
         gold = extract_final_answer(str(a))
+    a_text = str(a) if a is not None else ""
+    if gold is not None and "####" not in a_text:
+        a_text = f"{a_text}\n#### {gold}".strip()
     sft = {
         "messages": [
             {"role": "system", "content": SYSTEM},
             {"role": "user", "content": str(q)},
-            {"role": "assistant", "content": str(a) if a is not None else ""},
+            {"role": "assistant", "content": a_text},
         ]
     }
-    grpo = {"prompt": str(q), "gold": gold}
+    # Conversational prompt so TRL applies the chat template (instruct models).
+    grpo = {
+        "prompt": [
+            {"role": "system", "content": SYSTEM},
+            {"role": "user", "content": str(q)},
+        ],
+        "gold": gold,
+    }
     return sft, grpo
 
 
