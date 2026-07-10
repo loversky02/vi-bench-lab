@@ -54,7 +54,7 @@ def main(argv=None):
             target_modules="all-linear", task_type="CAUSAL_LM",
         )
 
-    cfg = GRPOConfig(
+    cfg_kwargs = dict(
         output_dir=args.out,
         per_device_train_batch_size=args.batch_size,
         gradient_accumulation_steps=args.grad_accum,
@@ -74,11 +74,15 @@ def main(argv=None):
         bf16=True,
         gradient_checkpointing=not args.no_checkpoint,
         gradient_checkpointing_kwargs={"use_reentrant": False},  # else LoRA grads are None
-        use_vllm=args.vllm,  # ~5-10x faster rollouts when vLLM is installed & CUDA-aligned
-        vllm_gpu_memory_utilization=0.4,  # leave room for training when vLLM colocates
         report_to="none",
-        log_completions=False,
     )
+    if args.vllm:  # ~5-10x faster rollouts (needs an aligned vLLM; see train/VLLM.md)
+        cfg_kwargs["use_vllm"] = True
+        cfg_kwargs["vllm_gpu_memory_utilization"] = 0.45
+        # colocate (single GPU, trl >= 0.18); field-check keeps trl 0.17 working
+        if "vllm_mode" in getattr(GRPOConfig, "__dataclass_fields__", {}):
+            cfg_kwargs["vllm_mode"] = "colocate"
+    cfg = GRPOConfig(**cfg_kwargs)
     trainer = GRPOTrainer(
         model=args.model,
         reward_funcs=[trl_reward_func],
