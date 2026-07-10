@@ -77,6 +77,30 @@ def main(argv=None):
         train_dataset=ds,
         peft_config=peft_config,
     )
+
+    # CRITICAL: trl's rollout GenerationConfig can omit eos_token_id → completions never
+    # stop → they clip at max → reward is always 0 → reward_std 0 → grad 0 → nothing learns.
+    # Force eos/pad on the model's config AND every GenerationConfig the trainer holds.
+    try:
+        from transformers import GenerationConfig as _GCfg
+
+        _tok = trainer.processing_class
+        _eos = _tok.eos_token_id
+        _pad = _tok.pad_token_id if _tok.pad_token_id is not None else _eos
+        trainer.model.generation_config.eos_token_id = _eos
+        trainer.model.generation_config.pad_token_id = _pad
+        for _n in dir(trainer):
+            try:
+                _o = getattr(trainer, _n)
+            except Exception:
+                continue
+            if isinstance(_o, _GCfg):
+                _o.eos_token_id = _eos
+                _o.pad_token_id = _pad
+                print(f"[eos-patch] trainer.{_n}.eos_token_id = {_eos}")
+    except Exception as _e:
+        print("[eos-patch] warning:", _e)
+
     trainer.train()
     trainer.save_model(args.out)
     print(f"saved -> {args.out}")
