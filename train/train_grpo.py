@@ -1,59 +1,76 @@
 """GRPO on the reasoning slice (GPU-gated; runs on RunPod, not on the Mac).
 
 Reward = train/reward.py (verifiable exact-match on the final answer + format bonus).
-Data  = train/data/grpo.jsonl from build_sft_data.py ({"prompt","gold"}).
+Data  = train/data/grpo_train.jsonl from build_sft_data.py
+        ({"prompt": [chat messages], "gold": <final answer>}).
 
-Kept import-safe: heavy deps (torch/trl/transformers) are imported inside main() so the
-module can be imported / linted without a GPU. See RUNBOOK.md for the pinned env.
+LoRA by default so a 3–4B model fits a 24GB card. Heavy deps import inside main() so the
+module stays import-safe without a GPU. Pinned env: torch 2.4+ · transformers 4.51.3 ·
+trl 0.17.0 · datasets 3.5.0 · peft (NO vllm — it drags in a torch that breaks CUDA).
 """
 
 from __future__ import annotations
 
 import argparse
-import json
-from pathlib import Path
-
-
-def load_jsonl(path):
-    return [json.loads(l) for l in open(path, encoding="utf-8") if l.strip()]
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="Qwen/Qwen3-4B")
-    ap.add_argument("--data", default="train/data/grpo.jsonl")
-    ap.add_argument("--out", default="train/out/grpo-qwen3-4b")
+    ap.add_argument("--data", default="train/data/grpo_train.jsonl")
+    ap.add_argument("--out", default="train/out/grpo")
     ap.add_argument("--num-generations", type=int, default=8)
     ap.add_argument("--batch-size", type=int, default=8)
+    ap.add_argument("--grad-accum", type=int, default=4)
     ap.add_argument("--lr", type=float, default=1e-6)
-    ap.add_argument("--max-steps", type=int, default=500)
+    ap.add_argument("--max-steps", type=int, default=300)
+    ap.add_argument("--max-prompt", type=int, default=400)
+    ap.add_argument("--max-completion", type=int, default=256)
+    ap.add_argument("--save-steps", type=int, default=100)
+    ap.add_argument("--no-lora", action="store_true")
     args = ap.parse_args(argv)
 
-    # Heavy imports are deliberately local (GPU-only).
-    from datasets import Dataset
+    from datasets import load_dataset
     from trl import GRPOConfig, GRPOTrainer
 
-    from reward import trl_reward_func  # noqa: F401  (run from train/)
+    try:
+        from reward import trl_reward_func
+    except ImportError:
+        from train.reward import trl_reward_func
 
-    rows = load_jsonl(args.data)
-    ds = Dataset.from_list([{"prompt": r["prompt"], "gold": r["gold"]} for r in rows])
+    ds = load_dataset("json", data_files=args.data, split="train")
+
+    peft_config = None
+    if not args.no_lora:
+        from peft import LoraConfig
+
+        peft_config = LoraConfig(
+            r=16, lora_alpha=32, lora_dropout=0.05,
+            target_modules="all-linear", task_type="CAUSAL_LM",
+        )
 
     cfg = GRPOConfig(
         output_dir=args.out,
         per_device_train_batch_size=args.batch_size,
+        gradient_accumulation_steps=args.grad_accum,
         num_generations=args.num_generations,
+        max_prompt_length=args.max_prompt,
+        max_completion_length=args.max_completion,
         learning_rate=args.lr,
         max_steps=args.max_steps,
-        logging_steps=10,
-        save_steps=100,
+        logging_steps=5,
+        save_steps=args.save_steps,
         bf16=True,
         gradient_checkpointing=True,
+        report_to="none",
+        log_completions=False,
     )
     trainer = GRPOTrainer(
         model=args.model,
         reward_funcs=[trl_reward_func],
         args=cfg,
         train_dataset=ds,
+        peft_config=peft_config,
     )
     trainer.train()
     trainer.save_model(args.out)
