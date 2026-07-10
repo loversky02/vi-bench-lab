@@ -20,8 +20,9 @@ def main(argv=None):
     from peft import PeftModel
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    # tokenizer from the adapter repo (carries the SFT chat template)
-    tok = AutoTokenizer.from_pretrained(args.adapter)
+    # tokenizer from the BASE (the adapter's tokenizer_config can carry a malformed
+    # extra_special_tokens list; the base vocab/chat-template is what SFT used anyway)
+    tok = AutoTokenizer.from_pretrained(args.base)
     base = AutoModelForCausalLM.from_pretrained(args.base, torch_dtype=torch.bfloat16)
     merged = PeftModel.from_pretrained(base, args.adapter).merge_and_unload()
     merged.save_pretrained(args.out)
