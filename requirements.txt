@@ -1,0 +1,6 @@
+# Core is stdlib-only — no runtime dependencies, runs $0 on a Mac.
+# Dev / test:
+pytest>=7.0
+# Optional: live model calls go through any OpenAI-compatible endpoint
+# (e.g. a self-hosted 9router gateway) using the stdlib urllib client in
+# vibench/models.py — no SDK required. Set NINEROUTER_BASE_URL + NINEROUTER_API_KEY.
