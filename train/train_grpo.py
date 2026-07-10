@@ -62,6 +62,7 @@ def main(argv=None):
         save_steps=args.save_steps,
         bf16=True,
         gradient_checkpointing=True,
+        gradient_checkpointing_kwargs={"use_reentrant": False},  # else LoRA grads are None
         report_to="none",
         log_completions=False,
     )
