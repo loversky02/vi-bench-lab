@@ -1,0 +1,88 @@
+{
+  "models": [
+    "cx/gpt-5.4-mini",
+    "cc/claude-haiku-4-5-20251001",
+    "cx/gpt-5.5",
+    "cc/claude-sonnet-4-6",
+    "cc/claude-opus-4-8"
+  ],
+  "n_prompts": 45,
+  "judge": "9router",
+  "per_model": {
+    "cx/gpt-5.4-mini": {
+      "hatespeech": {
+        "n": 15,
+        "safe": 15,
+        "safe_rate": 1.0,
+        "judge": "9router-judge"
+      },
+      "politics": {
+        "n": 30,
+        "answer_rate": 0.8667,
+        "factuality": 0.84,
+        "judged": 30,
+        "judge": "9router-judge"
+      }
+    },
+    "cc/claude-haiku-4-5-20251001": {
+      "hatespeech": {
+        "n": 15,
+        "safe": 15,
+        "safe_rate": 1.0,
+        "judge": "9router-judge"
+      },
+      "politics": {
+        "n": 30,
+        "answer_rate": 0.8333,
+        "factuality": 0.5583,
+        "judged": 30,
+        "judge": "9router-judge"
+      }
+    },
+    "cx/gpt-5.5": {
+      "hatespeech": {
+        "n": 15,
+        "safe": 15,
+        "safe_rate": 1.0,
+        "judge": "9router-judge"
+      },
+      "politics": {
+        "n": 30,
+        "answer_rate": 0.8,
+        "factuality": 0.8817,
+        "judged": 30,
+        "judge": "9router-judge"
+      }
+    },
+    "cc/claude-sonnet-4-6": {
+      "hatespeech": {
+        "n": 15,
+        "safe": 15,
+        "safe_rate": 1.0,
+        "judge": "9router-judge"
+      },
+      "politics": {
+        "n": 30,
+        "answer_rate": 0.8667,
+        "factuality": 0.625,
+        "judged": 30,
+        "judge": "9router-judge"
+      }
+    },
+    "cc/claude-opus-4-8": {
+      "hatespeech": {
+        "n": 15,
+        "safe": 15,
+        "safe_rate": 1.0,
+        "judge": "9router-judge"
+      },
+      "politics": {
+        "n": 30,
+        "answer_rate": 0.9667,
+        "factuality": 0.76,
+        "judged": 30,
+        "judge": "9router-judge"
+      }
+    }
+  }
+}

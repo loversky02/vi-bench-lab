@@ -28,6 +28,8 @@ def main(argv=None):
     ap.add_argument("--max-completion", type=int, default=256)
     ap.add_argument("--save-steps", type=int, default=100)
     ap.add_argument("--no-lora", action="store_true")
+    ap.add_argument("--vllm", action="store_true",
+                    help="fast rollout generation via vLLM (needs an aligned vLLM install; see train/VLLM.md)")
     args = ap.parse_args(argv)
 
     from datasets import load_dataset
@@ -63,6 +65,7 @@ def main(argv=None):
         bf16=True,
         gradient_checkpointing=True,
         gradient_checkpointing_kwargs={"use_reentrant": False},  # else LoRA grads are None
+        use_vllm=args.vllm,  # ~5-10x faster rollouts when vLLM is installed & CUDA-aligned
         report_to="none",
         log_completions=False,
     )
