@@ -73,7 +73,8 @@ python -m vibench score --submission out/gpt55.jsonl --key out/silver.jsonl
 `scripts/live_baseline.py` runs a live, ground-truth-free **cross-model agreement probe**
 across several frontier models (via any OpenAI-compatible gateway): low-consensus items
 flag genuinely hard or ambiguous questions — an item-difficulty signal V-Bench could fold
-back in. Output lands in `results/`.
+back in. Output lands in `results/`; a sample run (5 frontier models) is committed at
+[results/BASELINE.md](results/BASELINE.md).
 
 ## The reasoning lever (`train/`)
 

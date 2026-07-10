@@ -1,0 +1,101 @@
+{
+  "models": [
+    "cx/gpt-5.4-mini",
+    "cc/claude-haiku-4-5-20251001",
+    "cc/claude-sonnet-4-6",
+    "cx/gpt-5.5",
+    "cc/claude-opus-4-8"
+  ],
+  "working": [
+    "cx/gpt-5.4-mini",
+    "cc/claude-haiku-4-5-20251001",
+    "cc/claude-sonnet-4-6",
+    "cx/gpt-5.5",
+    "cc/claude-opus-4-8"
+  ],
+  "dropped": [],
+  "coverage": {
+    "cx/gpt-5.4-mini": 0.972,
+    "cc/claude-haiku-4-5-20251001": 1.0,
+    "cc/claude-sonnet-4-6": 1.0,
+    "cx/gpt-5.5": 1.0,
+    "cc/claude-opus-4-8": 1.0
+  },
+  "n_rows": 36,
+  "per_domain": {
+    "culture": {
+      "n": 6,
+      "consensus": 0.7,
+      "agreement": {
+        "cx/gpt-5.4-mini": 0.833,
+        "cc/claude-haiku-4-5-20251001": 0.833,
+        "cc/claude-sonnet-4-6": 0.5,
+        "cx/gpt-5.5": 0.5,
+        "cc/claude-opus-4-8": 0.833
+      }
+    },
+    "dialect": {
+      "n": 6,
+      "consensus": 0.9,
+      "agreement": {
+        "cx/gpt-5.4-mini": 1.0,
+        "cc/claude-haiku-4-5-20251001": 0.833,
+        "cc/claude-sonnet-4-6": 1.0,
+        "cx/gpt-5.5": 0.833,
+        "cc/claude-opus-4-8": 0.833
+      }
+    },
+    "literature": {
+      "n": 6,
+      "consensus": 0.533,
+      "agreement": {
+        "cx/gpt-5.4-mini": 0.333,
+        "cc/claude-haiku-4-5-20251001": 0.5,
+        "cc/claude-sonnet-4-6": 0.833,
+        "cx/gpt-5.5": 0.5,
+        "cc/claude-opus-4-8": 0.5
+      }
+    },
+    "logics": {
+      "n": 6,
+      "consensus": 0.6,
+      "agreement": {
+        "cx/gpt-5.4-mini": 0.667,
+        "cc/claude-haiku-4-5-20251001": 0.833,
+        "cc/claude-sonnet-4-6": 0.667,
+        "cx/gpt-5.5": 0.167,
+        "cc/claude-opus-4-8": 0.667
+      }
+    },
+    "mathematics": {
+      "n": 6,
+      "consensus": 0.617,
+      "agreement": {
+        "cx/gpt-5.4-mini": 0.667,
+        "cc/claude-haiku-4-5-20251001": 0.167,
+        "cc/claude-sonnet-4-6": 0.333,
+        "cx/gpt-5.5": 1.0,
+        "cc/claude-opus-4-8": 0.833
+      }
+    },
+    "physics": {
+      "n": 6,
+      "consensus": 0.7,
+      "agreement": {
+        "cx/gpt-5.4-mini": 0.833,
+        "cc/claude-haiku-4-5-20251001": 0.5,
+        "cc/claude-sonnet-4-6": 0.667,
+        "cx/gpt-5.5": 0.833,
+        "cc/claude-opus-4-8": 0.667
+      }
+    }
+  },
+  "overall": {
+    "cx/gpt-5.4-mini": 0.722,
+    "cc/claude-haiku-4-5-20251001": 0.611,
+    "cc/claude-sonnet-4-6": 0.667,
+    "cx/gpt-5.5": 0.639,
+    "cc/claude-opus-4-8": 0.722,
+    "consensus": 0.675
+  }
+}
