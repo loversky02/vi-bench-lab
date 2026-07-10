@@ -14,10 +14,12 @@ GPT-5.5/Claude) or metered GPU (the training lever). Ordered by leverage.
 - [ ] `score` each candidate against the silver key; track per-category deltas.
 - [ ] Reality check: submit 1–2 candidates to the real grader and measure silver↔official gap.
 
-## C. Confirm the submission spec (email, $0)
-- [ ] Verify the **agentic** answer JSON shape against the grader (object vs OpenAI
-      tool-call). The MC spec (`{"id","answer":"<letter>"}`) is confirmed from the site.
-- [ ] Contact `vbench-support@vinuni.edu.vn` for the professional test set / official submit.
+## C. Submission (self-serve upload, $0)
+- [x] **Agentic format confirmed** from `vbench.ai/downloads/sample_submission.jsonl`:
+      `answer = [{"<function_name>": {args}}]`; MC = `"<letter>"`. Harness default now `vbench`.
+- [ ] Upload `out/submission.jsonl` at `vbench.ai/submission` → auto-scored on the public
+      test (returns an aggregate score; Safety ignored). Validates the pipeline end-to-end.
+- [ ] For the **official leaderboard** / professional (held-out) test: email `vbench-support@vinuni.edu.vn`.
 
 ## D. ⭐ The Vi-GSM8K lever (metered GPU — the paper)
 The audit shows the field is weakest and *most separable* on reasoning: `Logic` (r=0.43

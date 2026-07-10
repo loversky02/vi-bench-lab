@@ -6,11 +6,10 @@ in V-Bench format: one ``{"id": ..., "answer": ...}`` per line, matched by ``id`
 Answer encoding
 ---------------
 * MC       — ``answer`` is a single choice letter, e.g. ``"B"``.
-* AGENTIC  — ``answer`` is the chosen function call. The public site documents the
-  track as "Type 2 - Agentic (function call)" but does not publish the exact JSON
-  shape, so we default to ``{"name": ..., "arguments": {...}}`` and expose
-  ``agentic_format="openai"`` (arguments as a JSON *string*) as an alternative.
-  See docs/NEXT.md — confirm against the grader before an official submission.
+* AGENTIC  — ``answer`` matches the official sample submission: a single-element list
+  ``[{"<function_name>": {arg: value, ...}}]`` (``agentic_format="vbench"``, the default,
+  confirmed against vbench.ai/downloads/sample_submission.jsonl). ``"object"``
+  (``{"name", "arguments"}``) and ``"openai"`` variants remain available.
 """
 
 from __future__ import annotations
@@ -45,12 +44,14 @@ class RunStats:
 def _encode_agentic(call: dict, agentic_format: str) -> object:
     name = call.get("name", "")
     args = call.get("arguments", {})
+    if agentic_format == "vbench":  # official sample: [ {"<fn_name>": {args}} ]
+        return [{name: args}]
     if agentic_format == "openai":
         return {"name": name, "arguments": json.dumps(args, ensure_ascii=False)}
-    return {"name": name, "arguments": args}
+    return {"name": name, "arguments": args}  # "object"
 
 
-def predict_row(model: Model, row: Row, agentic_format: str = "object") -> object:
+def predict_row(model: Model, row: Row, agentic_format: str = "vbench") -> object:
     """Return the ``answer`` value for a single row (dispatch by track)."""
     track = classify_track(row)
     if track == Track.MC:
@@ -65,7 +66,7 @@ def build_submission(
     model: Model,
     tracks: Iterable[Track] = SCORED_TRACKS,
     limit: Optional[int] = None,
-    agentic_format: str = "object",
+    agentic_format: str = "vbench",
     progress: Optional[Callable[[int, int], None]] = None,
 ) -> tuple[list[dict], RunStats]:
     """Run ``model`` over rows whose track is in ``tracks``; return (submissions, stats)."""

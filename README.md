@@ -99,9 +99,9 @@ docs/NEXT.md    the live / paid roadmap (9router baselines, Qwen3-4B SFT→GRPO,
 
 ## Honest caveats
 
-- **Agentic answer encoding** is assumed `{"name","arguments"}` (the site documents the
-  track but not the exact grader JSON). Confirm against the grader before an official
-  submission; `--agentic-format openai` is available. See NEXT.md.
+- **Agentic answer encoding** matches the official sample submission (confirmed against
+  `vbench.ai/downloads/sample_submission.jsonl`): `answer = [{"<function_name>": {args}}]`
+  (`--agentic-format vbench`, the default). `object` / `openai` variants remain available.
 - **The silver key ≠ ground truth.** It measures agreement-with-the-ensemble; use it to
   iterate locally, then confirm gains on the real leaderboard.
 - **Safety metrics** are refusal/engagement heuristics (rule judge) or LLM-judge

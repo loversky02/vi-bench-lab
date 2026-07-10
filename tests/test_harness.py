@@ -26,10 +26,16 @@ def test_mc_answers_valid_letters():
 def test_agentic_answer_shape():
     rows = {r.id: r for r in load_dataset(FIX)}
     model = DeterministicModel()
+    # default = vbench official format: [ {"<fn_name>": {args}} ]
     ans = predict_row(model, rows[103])
-    assert ans["name"] == "calc_safe_velocity"
-    assert ans["arguments"]["radius_m"] == 0     # number default
-    assert ans["arguments"]["surface"] == "DRY"  # first enum
+    assert isinstance(ans, list) and len(ans) == 1
+    call = ans[0]
+    assert list(call.keys()) == ["calc_safe_velocity"]
+    assert call["calc_safe_velocity"]["radius_m"] == 0     # number default
+    assert call["calc_safe_velocity"]["surface"] == "DRY"  # first enum
+    # object format still available
+    assert predict_row(model, rows[103], agentic_format="object")["name"] == "calc_safe_velocity"
+    # openai format: arguments as a JSON string
     ans2 = predict_row(model, rows[103], agentic_format="openai")
     assert isinstance(ans2["arguments"], str)
     assert json.loads(ans2["arguments"])["surface"] == "DRY"

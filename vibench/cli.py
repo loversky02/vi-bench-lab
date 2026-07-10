@@ -172,7 +172,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--data", default=str(DEFAULT_DATA_PATH))
     sp.add_argument("--out", default="out/submission.jsonl")
     sp.add_argument("--tracks", default="scored", help="scored | mc | agentic")
-    sp.add_argument("--agentic-format", default="object", choices=["object", "openai"])
+    sp.add_argument("--agentic-format", default="vbench", choices=["vbench", "object", "openai"])
     sp.add_argument("--domains", default=None, help="comma-separated domains to include")
     sp.add_argument("--per-domain", type=int, default=None, help="cap rows sampled per domain (stratified)")
     sp.add_argument("--limit", type=int, default=None)
